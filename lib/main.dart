@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'screens/login_page.dart'; // Pastikan folder 'screens' ada di dalam 'lib'
 
 void main() {
   runApp(const MyApp());
@@ -7,11 +8,11 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'E-Learning KUA',
+      debugShowCheckedModeBanner: false, // Menghilangkan banner debug
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -28,9 +29,12 @@ class MyApp extends StatelessWidget {
         //
         // This works for code too, not just values: Most code changes can be
         // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+// Menggunakan warna hijau agar sesuai dengan tema KUA/Kemenag
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
+        useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+// Hapus 'const' di sini jika di login_page.dart kamu tidak pakai const constructor
+      home: LoginPage(), 
     );
   }
 }
@@ -102,7 +106,7 @@ class _MyHomePageState extends State<MyHomePage> {
           // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
           // action in the IDE, or press "p" in the console), to see the
           // wireframe for each widget.
-          mainAxisAlignment: .center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text('You have pushed the button this many times:'),
             Text(
