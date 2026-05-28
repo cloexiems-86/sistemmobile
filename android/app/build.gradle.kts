@@ -1,13 +1,16 @@
+// File: android/app/build.gradle.kts
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// File: android/app/build.gradle.kts
+
 android {
     namespace = "com.example.ebimwinmobile"
-    compileSdk = flutter.compileSdkVersion
+    // Gunakan 34 atau 35 (Stable), jangan 36
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -16,24 +19,22 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
+        jvmTarget = "17"
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.ebimwinmobile"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        // Syncfusion minimal butuh 21
+        minSdk = flutter.minSdkVersion 
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
+    // ... sisa kode lainnya
+
 
     buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+        getByName("release") {
             signingConfig = signingConfigs.getByName("debug")
         }
     }

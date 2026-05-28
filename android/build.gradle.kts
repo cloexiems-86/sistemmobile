@@ -1,3 +1,4 @@
+// File: android/build.gradle.kts
 allprojects {
     repositories {
         google()
@@ -5,20 +6,24 @@ allprojects {
     }
 }
 
-val newBuildDir: Directory =
-    rootProject.layout.buildDirectory
-        .dir("../../build")
-        .get()
-rootProject.layout.buildDirectory.value(newBuildDir)
+rootProject.buildDir = layout.buildDirectory.asFile.get()
 
 subprojects {
-    val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
-    project.layout.buildDirectory.value(newSubprojectBuildDir)
+    project.buildDir = file("${rootProject.projectDir}/../build/${project.name}")
 }
+
 subprojects {
-    project.evaluationDependsOn(":app")
+    afterEvaluate {
+        if (plugins.hasPlugin("com.android.library") || plugins.hasPlugin("com.android.application")) {
+            extensions.configure<com.android.build.gradle.BaseExtension>("android") {
+                if (namespace == null) {
+                    namespace = "com.example." + project.name.replace("-", ".")
+                }
+            }
+        }
+    }
 }
 
 tasks.register<Delete>("clean") {
-    delete(rootProject.layout.buildDirectory)
+    delete(rootProject.buildDir)
 }
