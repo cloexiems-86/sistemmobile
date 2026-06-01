@@ -150,7 +150,7 @@ class _HomePageState extends State<HomePage> {
     const Color bgLight = Color(0xFFF6F8F6);
 
     if (loading) {
-      return Scaffold(
+      return const Scaffold(
         backgroundColor: bgLight,
         body: Center(child: CircularProgressIndicator(color: primaryColor)),
       );
@@ -236,7 +236,7 @@ class _HomePageState extends State<HomePage> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.location_on, color: primaryColor, size: 16),
+                          const Icon(Icons.location_on, color: primaryColor, size: 16),
                           const SizedBox(width: 8),
                           const Flexible(
                             child: Text(
@@ -269,14 +269,14 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.auto_stories, color: primaryColor, size: 24),
+                            const Icon(Icons.auto_stories, color: primaryColor, size: 24),
                             const SizedBox(width: 12),
                             const Text('Progres Pembelajaran', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                           ],
                         ),
                         Text(
                           '${dashboardData['progress']?['persentase'] ?? 0}%',
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: primaryColor),
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: primaryColor),
                         ),
                       ],
                     ),
@@ -287,7 +287,7 @@ class _HomePageState extends State<HomePage> {
                         value: (dashboardData['progress']?['persentase'] ?? 0) / 100,
                         minHeight: 12,
                         backgroundColor: Colors.grey[200],
-                        valueColor: AlwaysStoppedAnimation(primaryColor),
+                        valueColor: const AlwaysStoppedAnimation(primaryColor),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -471,7 +471,8 @@ class _HomePageState extends State<HomePage> {
                       crossAxisCount: 4,
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
-                      childAspectRatio: 1,
+                      // PERBAIKAN: Mengubah rasio dari 1 menjadi 0.75 agar punya ruang vertikal lebih tinggi untuk teks
+                      childAspectRatio: 0.75, 
                       children: [
                         _buildMenuButton(Icons.menu_book_outlined, 'Materi', primaryColor, () => Navigator.push(context, MaterialPageRoute(builder: (_) => MateriPage(userData: widget.userData))).then((_) => ambilDashboard())),
                         _buildMenuButton(Icons.quiz_outlined, 'Ujian', Colors.orange, () {
@@ -609,7 +610,7 @@ class _HomePageState extends State<HomePage> {
         ),
         const SizedBox(height: 4),
         Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
       ],
     );
   }
@@ -643,7 +644,11 @@ class _HomePageState extends State<HomePage> {
             child: Icon(icon, color: color, size: 28),
           ),
           const SizedBox(height: 8),
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+          // PERBAIKAN: Membungkus Text dengan FittedBox agar tidak overflow jika layar HP kecil
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+          ),
         ],
       ),
     );

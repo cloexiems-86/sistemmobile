@@ -38,7 +38,7 @@ class _SertifikatPageState extends State<SertifikatPage> {
       final userId = widget.userData?['id'] ?? '1';
       final namaAktif = widget.userData?['nama_aktif'] ?? widget.userData?['nama'] ?? '';
       final peran = (namaAktif == widget.userData?['nama_suami']) ? 'suami' : 'istri';
-      // Gunakan HTTPS agar lebih aman dan sesuai dengan API Laravel
+      
       final response = await http.get(
         Uri.parse("https://$_currentIp/catin_api/get_sertifikat.php?user_id=$userId&nama_peserta=${Uri.encodeComponent(namaAktif)}&peran=$peran"),
       ).timeout(const Duration(seconds: 10));
@@ -47,7 +47,6 @@ class _SertifikatPageState extends State<SertifikatPage> {
         final data = jsonDecode(response.body);
         int parsedSkor = 0;
         
-        // Cek apakah ada skor lokal (dari ujian terakhir di perangkat ini)
         String? localScore = prefs.getString('last_exam_score_$userId');
         if (localScore != null) {
           parsedSkor = int.tryParse(localScore) ?? 0;
@@ -60,23 +59,29 @@ class _SertifikatPageState extends State<SertifikatPage> {
         setState(() {
           skor = parsedSkor;
           isLulus = apiIsLulus && (skor >= 70);
+          
+          // MENGAMBIL URL ASLI DARI DATABASE (YANG SUDAH MENGANDUNG ID UJIAN)
           String? urlS = data['url_sertifikat'];
-          if (urlS != null && urlS.isNotEmpty && !urlS.startsWith('http')) {
-            if (urlS.startsWith('/')) {
-              urlS = "https://$_currentIp$urlS";
-            } else {
-              // Misal balikan API adalah "catin_api/file.pdf" atau "sertifikat/file.pdf"
-              urlS = urlS.startsWith('catin_api') ? "https://$_currentIp/$urlS" : "https://$_currentIp/catin_api/$urlS";
+          if (urlS != null && urlS.isNotEmpty) {
+            if (!urlS.startsWith('http')) {
+              urlS = urlS.startsWith('/') ? "https://$_currentIp$urlS" : "https://$_currentIp/$urlS";
+            }
+            // TAMBAHKAN PARAMETER PERAN (SUAMI/ISTRI) KE UJUNG URL
+            if (!urlS.endsWith('/suami') && !urlS.endsWith('/istri')) {
+              urlS = urlS.endsWith('/') ? "$urlS$peran" : "$urlS/$peran";
             }
           }
           urlSertifikat = urlS;
 
+          // MENGAMBIL URL DOWNLOAD DARI DATABASE
           String? urlD = data['url_download'];
-          if (urlD != null && urlD.isNotEmpty && !urlD.startsWith('http')) {
-            if (urlD.startsWith('/')) {
-              urlD = "https://$_currentIp$urlD";
-            } else {
-              urlD = urlD.startsWith('catin_api') ? "https://$_currentIp/$urlD" : "https://$_currentIp/catin_api/$urlD";
+          if (urlD != null && urlD.isNotEmpty) {
+            if (!urlD.startsWith('http')) {
+              urlD = urlD.startsWith('/') ? "https://$_currentIp$urlD" : "https://$_currentIp/$urlD";
+            }
+            // TAMBAHKAN PARAMETER PERAN (SUAMI/ISTRI) KE UJUNG URL
+            if (!urlD.endsWith('/suami') && !urlD.endsWith('/istri')) {
+              urlD = urlD.endsWith('/') ? "$urlD$peran" : "$urlD/$peran";
             }
           }
           urlDownload = urlD;

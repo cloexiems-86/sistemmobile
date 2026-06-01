@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+// WAJIB IMPORT API SERVICE YANG BARU KITA BUAT
+import '../services/api_service.dart';
 
 class JadwalPage extends StatefulWidget {
   final Map userData;
@@ -35,7 +37,6 @@ class _JadwalPageState extends State<JadwalPage> {
     if (mounted) setState(() => loading = true);
     try {
       String userId = widget.userData['id']?.toString() ?? '';
-      // Menggunakan endpoint yang konsisten dengan get_dashboard.php
       var url = Uri.parse("https://$_currentIp/catin_api/get_jadwal.php?user_id=$userId");
       var response = await http.get(url).timeout(const Duration(seconds: 10));
 
@@ -43,7 +44,6 @@ class _JadwalPageState extends State<JadwalPage> {
       if (response.statusCode == 200) {
         var data = jsonDecode(response.body);
         setState(() {
-          // Asumsi API mengembalikan list langsung atau dalam field 'data'
           daftarJadwal = data is List ? data : (data['data'] ?? []);
           loading = false;
         });
@@ -59,6 +59,56 @@ class _JadwalPageState extends State<JadwalPage> {
         errorMessage = 'Gagal memuat jadwal: $e';
         loading = false;
       });
+    }
+  }
+
+  Future<void> _prosesAbsensi(String jadwalId) async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            SizedBox(
+              width: 20, 
+              height: 20, 
+              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)
+            ),
+            SizedBox(width: 15),
+            Text('Mencatat kehadiran...'),
+          ],
+        ),
+        duration: Duration(seconds: 2),
+        backgroundColor: Colors.blueGrey,
+      ),
+    );
+
+    String userId = widget.userData['id']?.toString() ?? '';
+    String peserta = widget.userData['peserta']?.toString() ?? '';
+
+    final result = await ApiService.submitAbsensi(
+      userId,
+      jadwalId,
+      peserta,
+    );
+
+    if (!mounted) return;
+
+    if (result['success'] == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("✅ ${result['message']}"),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      ambilJadwal(); 
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("⚠️ ${result['message']}"),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -142,6 +192,16 @@ class _JadwalPageState extends State<JadwalPage> {
   Widget _buildJadwalCard(Map<String, dynamic> jadwal) {
     const Color primaryColor = Color(0xFF19e62b);
     
+    // 1. CEK STATUS DARI DATABASE (Selesai/Batal)
+    String status = (jadwal['status'] ?? 'mendatang').toString().toLowerCase();
+    bool isSelesaiAtauBatal = (status == 'selesai' || status == 'batal');
+    
+    // 2. CEK WAKTU NYATA (Apakah sudah terlewat hari dan jamnya)
+    bool isTerlewat = _isJadwalTerlewat(jadwal['tanggal'], jadwal['jam']);
+    
+    // 3. KEPUTUSAN FINAL TOMBOL ABSENSI
+    bool isDitutup = isSelesaiAtauBatal || isTerlewat;
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -161,7 +221,6 @@ class _JadwalPageState extends State<JadwalPage> {
             child: IntrinsicHeight(
               child: Row(
                 children: [
-                  // Date Indicator
                   Container(
                     width: 80,
                     color: primaryColor.withAlpha(20),
@@ -185,7 +244,6 @@ class _JadwalPageState extends State<JadwalPage> {
                       ],
                     ),
                   ),
-                  // Content
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -203,7 +261,7 @@ class _JadwalPageState extends State<JadwalPage> {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              _buildStatusChip(jadwal['status'] ?? 'mendatang'),
+                              _buildStatusChip(status),
                             ],
                           ),
                           const SizedBox(height: 12),
@@ -211,20 +269,50 @@ class _JadwalPageState extends State<JadwalPage> {
                           const SizedBox(height: 8),
                           _buildInfoRow(Icons.location_on, jadwal['tempat'] ?? 'KUA Mojo', Colors.teal),
                           const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 10,
-                                backgroundColor: Colors.grey[200],
-                                child: const Icon(Icons.person, size: 12, color: Colors.grey),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                jadwal['narasumber'] ?? 'Petugas KUA',
-                                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                              ),
-                            ],
-                          ),
+                          const Divider(),
+                          
+                          // TAMPILAN TOMBOL ABSEN
+                          isDitutup
+                              ? Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade100,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Center(
+                                    child: Text(
+                                      'Sesi / Waktu Telah Ditutup',
+                                      style: TextStyle(
+                                        color: Colors.grey,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      String jadwalId = jadwal['id']?.toString() ?? '';
+                                      _prosesAbsensi(jadwalId);
+                                    },
+                                    icon: const Icon(Icons.touch_app, size: 18),
+                                    label: const Text(
+                                      'Absen Kehadiran',
+                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: primaryColor,
+                                      foregroundColor: Colors.white,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  ),
+                                ),
                         ],
                       ),
                     ),
@@ -243,7 +331,7 @@ class _JadwalPageState extends State<JadwalPage> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(jadwal['judul'] ?? 'Detail Jadwal'),
+        title: Text(jadwal['judul'] ?? 'Detail Jadwal', style: const TextStyle(fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -267,7 +355,7 @@ class _JadwalPageState extends State<JadwalPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Tutup'),
+            child: const Text('Tutup', style: TextStyle(color: Colors.grey)),
           ),
         ],
       ),
@@ -320,7 +408,6 @@ class _JadwalPageState extends State<JadwalPage> {
     );
   }
 
-  // Helper methods to parse date strings
   String _getDay(String? dateStr) {
     if (dateStr == null) return 'Sen';
     try {
@@ -350,6 +437,47 @@ class _JadwalPageState extends State<JadwalPage> {
       return months[dt.month - 1];
     } catch (e) {
       return 'Bulan';
+    }
+  }
+
+  // ==============================================================
+  // FUNGSI BARU (PERBAIKAN ANTI-BADAI): Logika Waktu Nyata 
+  // Menangani salah ketik admin (pakai titik bukan titik dua)
+  // ==============================================================
+  bool _isJadwalTerlewat(String? tanggalStr, String? jamStr) {
+    if (tanggalStr == null) return false;
+    try {
+      String endTimeStr = "23:59"; 
+      if (jamStr != null && jamStr.contains('-')) {
+        endTimeStr = jamStr.split('-')[1].trim(); 
+      } else if (jamStr != null) {
+        endTimeStr = jamStr.trim();
+      }
+
+      // FITUR PENYELAMAT: Ubah tanda titik (.) menjadi titik dua (:)
+      // Jika admin KUA ngetik "05.00", akan diubah jadi "05:00" agar sistem paham.
+      endTimeStr = endTimeStr.replaceAll('.', ':');
+
+      List<String> timeParts = endTimeStr.split(':');
+      int hour = 23;
+      int minute = 59;
+      
+      if (timeParts.length >= 2) {
+        hour = int.tryParse(timeParts[0]) ?? 23;
+        minute = int.tryParse(timeParts[1]) ?? 59;
+      }
+
+      // Gabungkan Tanggal Jadwal dengan Jam Akhir
+      DateTime date = DateTime.parse(tanggalStr);
+      DateTime scheduleEnd = DateTime(date.year, date.month, date.day, hour, minute);
+      
+      // Ambil waktu saat ini
+      DateTime now = DateTime.now();
+
+      // Jika waktu saat ini sudah melewati batas akhir jadwal, return true
+      return now.isAfter(scheduleEnd);
+    } catch (e) {
+      return false;
     }
   }
 }

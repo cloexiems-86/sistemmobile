@@ -94,20 +94,47 @@ class _LoginPageState extends State<LoginPage> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Siapa yang akan belajar?", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Text(
+          "Siapa yang akan belajar?",
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.male, color: Colors.blue),
-              title: Text(userData['nama_suami'] ?? 'Calon Suami', style: GoogleFonts.poppins()),
-              onTap: () => _masukDashboard(userData, userData['nama_suami']),
+              leading: const Icon(
+                Icons.male,
+                color: Colors.blue,
+              ),
+              title: Text(
+                userData['nama_suami'] ?? 'Calon Suami',
+                style: GoogleFonts.poppins(),
+              ),
+              onTap: () => _masukDashboard(
+                userData,
+                userData['nama_suami'] ?? '',
+                'suami',
+              ),
             ),
             ListTile(
-              leading: const Icon(Icons.female, color: Colors.pink),
-              title: Text(userData['nama_istri'] ?? 'Calon Istri', style: GoogleFonts.poppins()),
-              onTap: () => _masukDashboard(userData, userData['nama_istri']),
+              leading: const Icon(
+                Icons.female,
+                color: Colors.pink,
+              ),
+              title: Text(
+                userData['nama_istri'] ?? 'Calon Istri',
+                style: GoogleFonts.poppins(),
+              ),
+              onTap: () => _masukDashboard(
+                userData,
+                userData['nama_istri'] ?? '',
+                'istri',
+              ),
             ),
           ],
         ),
@@ -115,12 +142,21 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  void _masukDashboard(Map userData, String namaAktif) {
+  void _masukDashboard(
+    Map userData,
+    String namaAktif,
+    String peserta,
+  ) {
     userData['nama_aktif'] = namaAktif;
+    userData['peserta'] = peserta;
+
     Navigator.pop(context);
+
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => HomePage(userData: userData)),
+      MaterialPageRoute(
+        builder: (context) => HomePage(userData: userData),
+      ),
     );
   }
 

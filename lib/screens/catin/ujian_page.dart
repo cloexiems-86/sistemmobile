@@ -22,7 +22,8 @@ class _UjianPageState extends State<UjianPage> {
   final String _currentIp = 'farel.dwirez.app';
   
   // Timer State Variables
-  static const int _durasiUjianMenit = 15;
+  // MENGUBAH WAKTU UJIAN DI SINI (Contoh: diubah menjadi 10 menit)
+  static const int _durasiUjianMenit = 10;
   Timer? _timer;
   int _remainingSeconds = _durasiUjianMenit * 60;
 
